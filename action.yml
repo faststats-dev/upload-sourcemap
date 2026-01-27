@@ -1,0 +1,19 @@
+name: "Upload Sourcemaps"
+description: "Upload sourcemaps to FastStats"
+inputs:
+  dist-dir:
+    description: "The directory containing the sourcemaps"
+    required: true
+    default: "dist"
+  api-key:
+    description: "The API key for the FastStats API"
+    required: true
+    default: "faststats-api-key"
+  api-url:
+    description: "The URL of the FastStats sourcemaps API (used for self-hosted instances)"
+    required: false
+    default: "https://sourcemaps.faststats.dev"
+
+runs:
+  using: "node24"
+  main: "dist/index.js"

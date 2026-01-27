@@ -4,11 +4,7 @@ import path from "path";
 
 const distDir = getInput("dist-dir") || "dist";
 const apiUrl = getInput("api-url") || "https://sourcemaps.faststats.dev";
-const apiKey = process.env.FASTSTATS_API_KEY;
-
-if(!apiKey) {
-  throw new Error("FASTSTATS_API_KEY is not set");
-}
+const apiKey = getInput("api-key");
 
 const form = new FormData();
 

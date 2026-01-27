@@ -8,7 +8,6 @@ inputs:
   api-key:
     description: "The API key for the FastStats API"
     required: true
-    default: "faststats-api-key"
   api-url:
     description: "The URL of the FastStats sourcemaps API (used for self-hosted instances)"
     required: false

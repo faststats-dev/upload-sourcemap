@@ -7,7 +7,7 @@ GitHub Action to upload sourcemaps to FastStats.
 ## Usage
 
 ```yaml
-- uses: your-org/upload-sourcemap@v0.1
+- uses: faststats-dev/upload-sourcemap@v0.1
   with:
     dist-dir: dist
     api-key: ${{ secrets.FASTSTATS_API_KEY }}

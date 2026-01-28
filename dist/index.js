@@ -19997,35 +19997,47 @@ if (!fs.existsSync(absoluteDistDir)) {
 }
 var allContents = fs.readdirSync(absoluteDistDir, { recursive: true });
 import_core.info(`[FastStats] Scanning directory: ${absoluteDistDir}`);
-import_core.info(`[FastStats] All files found: ${JSON.stringify(allContents)}`);
-var form = new FormData;
-var count = 0;
+var BATCH_SIZE = 100;
+var mapFiles = [];
 for (const relativePath of allContents) {
   if (relativePath.endsWith(".map")) {
     const fullPath = path.join(absoluteDistDir, relativePath);
     if (fs.statSync(fullPath).isDirectory())
       continue;
+    mapFiles.push({ relativePath, fullPath });
+  }
+}
+if (mapFiles.length === 0) {
+  import_core.setFailed(`[FastStats] No sourcemaps (.map files) found in ${absoluteDistDir}`);
+  process.exit(1);
+}
+import_core.info(`[FastStats] Found ${mapFiles.length} sourcemaps to upload`);
+var batches = [];
+for (let i = 0;i < mapFiles.length; i += BATCH_SIZE) {
+  batches.push(mapFiles.slice(i, i + BATCH_SIZE));
+}
+import_core.info(`[FastStats] Uploading in ${batches.length} batch(es) of max ${BATCH_SIZE} files`);
+for (let batchIndex = 0;batchIndex < batches.length; batchIndex++) {
+  const batch = batches[batchIndex];
+  const form = new FormData;
+  for (const { relativePath, fullPath } of batch ?? []) {
     const fileName = path.basename(relativePath);
     const buffer = fs.readFileSync(fullPath);
     const blob = new Blob([buffer], { type: "application/json" });
     form.append("file", blob, fileName);
     import_core.info(`[FastStats] Preparing: ${fileName}`);
-    count++;
   }
+  import_core.info(`[FastStats] Uploading batch ${batchIndex + 1}/${batches.length} (${batch?.length ?? 0} files) to ${apiUrl}`);
+  const uploadRes = await fetch(`${apiUrl}/v1/sourcemaps`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: form
+  });
+  const responseText = await uploadRes.text();
+  if (!uploadRes.ok) {
+    import_core.setFailed(`[FastStats] Upload failed (${uploadRes.status}): ${responseText}`);
+    process.exit(1);
+  }
+  import_core.info(`[FastStats] Batch ${batchIndex + 1} uploaded successfully: ${responseText}`);
 }
-if (count === 0) {
-  import_core.setFailed(`[FastStats] No sourcemaps (.map files) found in ${absoluteDistDir}`);
-  process.exit(1);
-}
-import_core.info(`[FastStats] Uploading ${count} sourcemaps to ${apiUrl}`);
-var uploadRes = await fetch(`${apiUrl}/v1/sourcemaps`, {
-  method: "POST",
-  headers: { Authorization: `Bearer ${apiKey}` },
-  body: form
-});
-var responseText = await uploadRes.text();
-if (!uploadRes.ok) {
-  import_core.setFailed(`[FastStats] Upload failed (${uploadRes.status}): ${responseText}`);
-  process.exit(1);
-}
-import_core.info(`[FastStats] Successfully uploaded sourcemaps: ${responseText}`);
+import_core.info(`[FastStats] Successfully uploaded all ${mapFiles.length} sourcemaps`);

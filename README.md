@@ -1,6 +1,6 @@
 # Upload Sourcemaps
 
-[![CI](https://github.com/your-org/upload-sourcemap/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/upload-sourcemap/actions/workflows/ci.yml)
+[![CI](https://github.com/faststats-dev/upload-sourcemap/actions/workflows/ci.yml/badge.svg)](https://github.com/faststats-dev/upload-sourcemap/actions/workflows/ci.yml)
 
 GitHub Action to upload sourcemaps to FastStats.
 

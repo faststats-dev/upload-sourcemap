@@ -19992,7 +19992,11 @@ var apiUrl = import_core.getInput("api-url") || "https://sourcemaps.faststats.de
 var apiKey = import_core.getInput("api-key");
 var form = new FormData;
 var hasFiles = false;
-var files = fs.readdirSync(distDir);
+var absoluteDistDir = path.resolve(process.cwd(), distDir);
+if (!fs.existsSync(absoluteDistDir)) {
+  import_core.setFailed(`Directory not found: ${absoluteDistDir}`);
+}
+var files = fs.readdirSync(absoluteDistDir);
 for (const file of files) {
   if (file.endsWith(".map")) {
     const filePath = path.join(distDir, file);

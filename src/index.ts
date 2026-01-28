@@ -9,7 +9,14 @@ const apiKey = getInput("api-key");
 const form = new FormData();
 let hasFiles = false;
 
-const files = fs.readdirSync(distDir);
+
+const absoluteDistDir = path.resolve(process.cwd(), distDir);
+
+if (!fs.existsSync(absoluteDistDir)) {
+    setFailed(`Directory not found: ${absoluteDistDir}`);
+  }
+
+  const files = fs.readdirSync(absoluteDistDir);
 
 for (const file of files) {
 	if (file.endsWith(".map")) {

@@ -7,14 +7,22 @@ const apiUrl = getInput("api-url") || "https://sourcemaps.faststats.dev";
 const apiKey = getInput("api-key");
 
 const form = new FormData();
+let hasFiles = false;
 
-for (const file of fs.readdirSync(distDir)) {
-  if (file.endsWith(".map")) {
-    const sourcemapContent = fs.readFileSync(path.join(distDir, file), "utf8");
-    form.append("file", new Blob([sourcemapContent]), file);
+const files = fs.readdirSync(distDir);
+
+for (const file of files) {
+	if (file.endsWith(".map")) {
+	  const filePath = path.join(distDir, file);
+	  const buffer = fs.readFileSync(filePath);
+	  
+	  const blob = new Blob([buffer]);
+	  form.append("file", blob, file);
+	  
+	  console.log(`[FastStats] Preparing: ${file}`);
+	  hasFiles = true;
+	}
   }
-}
-
 const uploadRes = await fetch(
 	`${apiUrl}/v1/sourcemaps`,
 	{

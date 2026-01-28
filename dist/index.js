@@ -19991,10 +19991,16 @@ var distDir = import_core.getInput("dist-dir") || "dist";
 var apiUrl = import_core.getInput("api-url") || "https://sourcemaps.faststats.dev";
 var apiKey = import_core.getInput("api-key");
 var form = new FormData;
-for (const file of fs.readdirSync(distDir)) {
+var hasFiles = false;
+var files = fs.readdirSync(distDir);
+for (const file of files) {
   if (file.endsWith(".map")) {
-    const sourcemapContent = fs.readFileSync(path.join(distDir, file), "utf8");
-    form.append("file", new Blob([sourcemapContent]), file);
+    const filePath = path.join(distDir, file);
+    const buffer = fs.readFileSync(filePath);
+    const blob = new Blob([buffer]);
+    form.append("file", blob, file);
+    console.log(`[FastStats] Preparing: ${file}`);
+    hasFiles = true;
   }
 }
 var uploadRes = await fetch(`${apiUrl}/v1/sourcemaps`, {

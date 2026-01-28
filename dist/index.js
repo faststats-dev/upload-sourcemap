@@ -11585,7 +11585,7 @@ var require_response = __commonJS((exports, module) => {
   var { types } = __require("node:util");
   var textEncoder = new TextEncoder("utf-8");
 
-  class Response {
+  class Response2 {
     static error() {
       const responseObject = fromInnerResponse(makeNetworkError(), "immutable");
       return responseObject;
@@ -11641,11 +11641,11 @@ var require_response = __commonJS((exports, module) => {
       initializeResponse(this, init, bodyWithType);
     }
     get type() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       return this[kState].type;
     }
     get url() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       const urlList = this[kState].urlList;
       const url = urlList[urlList.length - 1] ?? null;
       if (url === null) {
@@ -11654,35 +11654,35 @@ var require_response = __commonJS((exports, module) => {
       return URLSerializer(url, true);
     }
     get redirected() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       return this[kState].urlList.length > 1;
     }
     get status() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       return this[kState].status;
     }
     get ok() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       return this[kState].status >= 200 && this[kState].status <= 299;
     }
     get statusText() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       return this[kState].statusText;
     }
     get headers() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       return this[kHeaders];
     }
     get body() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       return this[kState].body ? this[kState].body.stream : null;
     }
     get bodyUsed() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       return !!this[kState].body && util.isDisturbed(this[kState].body.stream);
     }
     clone() {
-      webidl.brandCheck(this, Response);
+      webidl.brandCheck(this, Response2);
       if (bodyUnusable(this)) {
         throw webidl.errors.exception({
           header: "Response.clone",
@@ -11714,8 +11714,8 @@ var require_response = __commonJS((exports, module) => {
       return `Response ${nodeUtil.formatWithOptions(options, properties)}`;
     }
   }
-  mixinBody(Response);
-  Object.defineProperties(Response.prototype, {
+  mixinBody(Response2);
+  Object.defineProperties(Response2.prototype, {
     type: kEnumerableProperty,
     url: kEnumerableProperty,
     status: kEnumerableProperty,
@@ -11731,7 +11731,7 @@ var require_response = __commonJS((exports, module) => {
       configurable: true
     }
   });
-  Object.defineProperties(Response, {
+  Object.defineProperties(Response2, {
     json: kEnumerableProperty,
     redirect: kEnumerableProperty,
     error: kEnumerableProperty
@@ -11857,7 +11857,7 @@ var require_response = __commonJS((exports, module) => {
     }
   }
   function fromInnerResponse(innerResponse, guard) {
-    const response = new Response(kConstruct);
+    const response = new Response2(kConstruct);
     response[kState] = innerResponse;
     response[kHeaders] = new Headers(kConstruct);
     setHeadersList(response[kHeaders], innerResponse.headersList);
@@ -11919,7 +11919,7 @@ var require_response = __commonJS((exports, module) => {
     makeResponse,
     makeAppropriateNetworkError,
     filterResponse,
-    Response,
+    Response: Response2,
     cloneResponse,
     fromInnerResponse
   };
@@ -14363,7 +14363,7 @@ var require_cache = __commonJS((exports, module) => {
   var { urlEquals, getFieldValues } = require_util5();
   var { kEnumerableProperty, isDisturbed } = require_util();
   var { webidl } = require_webidl();
-  var { Response, cloneResponse, fromInnerResponse } = require_response();
+  var { Response: Response2, cloneResponse, fromInnerResponse } = require_response();
   var { Request, fromInnerRequest } = require_request2();
   var { kState } = require_symbols2();
   var { fetching } = require_fetch();
@@ -14853,7 +14853,7 @@ var require_cache = __commonJS((exports, module) => {
       converter: webidl.converters.DOMString
     }
   ]);
-  webidl.converters.Response = webidl.interfaceConverter(Response);
+  webidl.converters.Response = webidl.interfaceConverter(Response2);
   webidl.converters["sequence<RequestInfo>"] = webidl.sequenceConverter(webidl.converters.RequestInfo);
   module.exports = {
     Cache
@@ -19987,6 +19987,7 @@ var require_core = __commonJS((exports) => {
 var import_core = __toESM(require_core(), 1);
 import fs from "fs";
 import path from "path";
+import { zstdCompressSync } from "node:zlib";
 var distDir = import_core.getInput("dist-dir") || "dist";
 var apiUrl = import_core.getInput("api-url") || "https://sourcemaps.faststats.dev";
 var apiKey = import_core.getInput("api-key");
@@ -20023,10 +20024,14 @@ for (let i = 0;i < mapFiles.length; i += BATCH_SIZE) {
   }
   const batchIdx = Math.floor(i / BATCH_SIZE) + 1;
   const totalBatches = Math.ceil(mapFiles.length / BATCH_SIZE);
+  const response = new Response(form);
+  const blob = await response.blob();
+  const arrayBuffer = await blob.arrayBuffer();
+  const compressedBody = zstdCompressSync(Buffer.from(arrayBuffer));
   await fetch(`${apiUrl}/v1/sourcemaps`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Encoding": "zstd" },
+    body: compressedBody
   }).then(async (res) => {
     const text = await res.text();
     if (!res.ok)

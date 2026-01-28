@@ -1,12 +1,12 @@
 import { getInput, setFailed, info } from "@actions/core";
 import fs from "fs";
 import path from "path";
+import { zstdCompressSync } from "node:zlib";
 
 const distDir = getInput("dist-dir") || "dist";
 const apiUrl = getInput("api-url") || "https://sourcemaps.faststats.dev";
 const apiKey = getInput("api-key");
 const absoluteDistDir = path.resolve(process.cwd(), distDir);
-
 if (!fs.existsSync(absoluteDistDir)) {
   setFailed(`[FastStats] Directory not found: ${absoluteDistDir}`);
   process.exit(1);
@@ -53,10 +53,16 @@ for (let i = 0; i < mapFiles.length; i += BATCH_SIZE) {
   const batchIdx = Math.floor(i / BATCH_SIZE) + 1;
   const totalBatches = Math.ceil(mapFiles.length / BATCH_SIZE);
 
+  const response = new Response(form);
+  const blob = await response.blob();
+  const arrayBuffer = await blob.arrayBuffer();
+  
+  const compressedBody = zstdCompressSync(Buffer.from(arrayBuffer));
+
   await fetch(`${apiUrl}/v1/sourcemaps`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Encoding": "zstd" },
+    body: compressedBody,
   })
     .then(async (res) => {
       const text = await res.text();

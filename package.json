@@ -1,6 +1,6 @@
 {
   "name": "upload-sourcemap",
-  "version": "0.3",
+  "version": "0.4",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -8,7 +8,7 @@
     "build": "bun build src/index.ts --outdir dist --target node"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/node": "24.1.0"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -18,3 +18,4 @@
     "@actions/github": "^9.0.0"
   }
 }
+s

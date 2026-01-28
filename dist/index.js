@@ -19990,33 +19990,42 @@ import path from "path";
 var distDir = import_core.getInput("dist-dir") || "dist";
 var apiUrl = import_core.getInput("api-url") || "https://sourcemaps.faststats.dev";
 var apiKey = import_core.getInput("api-key");
-var form = new FormData;
-var hasFiles = false;
 var absoluteDistDir = path.resolve(process.cwd(), distDir);
 if (!fs.existsSync(absoluteDistDir)) {
-  import_core.setFailed(`Directory not found: ${absoluteDistDir}`);
+  import_core.setFailed(`[FastStats] Directory not found: ${absoluteDistDir}`);
+  process.exit(1);
 }
-var files = fs.readdirSync(absoluteDistDir);
-for (const file of files) {
-  if (file.endsWith(".map")) {
-    const filePath = path.join(distDir, file);
-    const buffer = fs.readFileSync(filePath);
-    const blob = new Blob([buffer]);
-    form.append("file", blob, file);
-    console.log(`[FastStats] Preparing: ${file}`);
-    hasFiles = true;
+var allContents = fs.readdirSync(absoluteDistDir, { recursive: true });
+import_core.info(`[FastStats] Scanning directory: ${absoluteDistDir}`);
+import_core.info(`[FastStats] All files found: ${JSON.stringify(allContents)}`);
+var form = new FormData;
+var count = 0;
+for (const relativePath of allContents) {
+  if (relativePath.endsWith(".map")) {
+    const fullPath = path.join(absoluteDistDir, relativePath);
+    if (fs.statSync(fullPath).isDirectory())
+      continue;
+    const fileName = path.basename(relativePath);
+    const buffer = fs.readFileSync(fullPath);
+    const blob = new Blob([buffer], { type: "application/json" });
+    form.append("file", blob, fileName);
+    import_core.info(`[FastStats] Preparing: ${fileName}`);
+    count++;
   }
 }
-if (!hasFiles) {
-  import_core.info("[FastStats] No sourcemaps found to upload.");
+if (count === 0) {
+  import_core.setFailed(`[FastStats] No sourcemaps (.map files) found in ${absoluteDistDir}`);
+  process.exit(1);
 }
-import_core.info(`[FastStats] Uploading ${hasFiles} sourcemaps to ${apiUrl}`);
+import_core.info(`[FastStats] Uploading ${count} sourcemaps to ${apiUrl}`);
 var uploadRes = await fetch(`${apiUrl}/v1/sourcemaps`, {
   method: "POST",
   headers: { Authorization: `Bearer ${apiKey}` },
   body: form
 });
+var responseText = await uploadRes.text();
 if (!uploadRes.ok) {
-  import_core.setFailed(`[FastStats] Failed to upload sourcemaps to ${apiUrl}: ${uploadRes.statusText}`);
+  import_core.setFailed(`[FastStats] Upload failed (${uploadRes.status}): ${responseText}`);
+  process.exit(1);
 }
-import_core.info(`[FastStats] Successfully uploaded sourcemaps`);
+import_core.info(`[FastStats] Successfully uploaded sourcemaps: ${responseText}`);

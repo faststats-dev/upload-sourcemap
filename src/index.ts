@@ -1,4 +1,4 @@
-import { getInput } from "@actions/core";
+import { getInput, setFailed, info } from "@actions/core";
 import fs from "fs";
 import path from "path";
 
@@ -23,6 +23,13 @@ for (const file of files) {
 	  hasFiles = true;
 	}
   }
+
+  if (!hasFiles) {
+	info("[FastStats] No sourcemaps found to upload.");
+  }
+
+  info(`[FastStats] Uploading ${hasFiles} sourcemaps to ${apiUrl}`);
+
 const uploadRes = await fetch(
 	`${apiUrl}/v1/sourcemaps`,
 	{
@@ -33,7 +40,7 @@ const uploadRes = await fetch(
 );
 
 if (!uploadRes.ok) {
-  throw new Error(`Failed to upload sourcemaps: ${uploadRes.statusText}`);
+  setFailed(`[FastStats] Failed to upload sourcemaps to ${apiUrl}: ${uploadRes.statusText}`);
 }
 
-console.log(`[FastStats] Uploaded sourcemaps`);
+info(`[FastStats] Successfully uploaded sourcemaps`);

@@ -20003,12 +20003,16 @@ for (const file of files) {
     hasFiles = true;
   }
 }
+if (!hasFiles) {
+  import_core.info("[FastStats] No sourcemaps found to upload.");
+}
+import_core.info(`[FastStats] Uploading ${hasFiles} sourcemaps to ${apiUrl}`);
 var uploadRes = await fetch(`${apiUrl}/v1/sourcemaps`, {
   method: "POST",
   headers: { Authorization: `Bearer ${apiKey}` },
   body: form
 });
 if (!uploadRes.ok) {
-  throw new Error(`Failed to upload sourcemaps: ${uploadRes.statusText}`);
+  import_core.setFailed(`[FastStats] Failed to upload sourcemaps to ${apiUrl}: ${uploadRes.statusText}`);
 }
-console.log(`[FastStats] Uploaded sourcemaps`);
+import_core.info(`[FastStats] Successfully uploaded sourcemaps`);

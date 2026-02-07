@@ -20025,12 +20025,16 @@ for (let i = 0;i < mapFiles.length; i += BATCH_SIZE) {
   const batchIdx = Math.floor(i / BATCH_SIZE) + 1;
   const totalBatches = Math.ceil(mapFiles.length / BATCH_SIZE);
   const response = new Response(form);
-  const blob = await response.blob();
-  const arrayBuffer = await blob.arrayBuffer();
+  const contentType = response.headers.get("Content-Type");
+  const arrayBuffer = await response.arrayBuffer();
   const compressedBody = zstdCompressSync(Buffer.from(arrayBuffer));
   await fetch(`${apiUrl}/v1/sourcemaps`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Encoding": "zstd" },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Encoding": "zstd",
+      "Content-Type": contentType
+    },
     body: compressedBody
   }).then(async (res) => {
     const text = await res.text();
